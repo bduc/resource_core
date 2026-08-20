@@ -103,6 +103,51 @@ module ResourceCore
           (type ? type.options : []) +
           namespaces.keys).uniq
       end
+
+      def register_theme(name, parent: nil)
+        name = name.to_sym
+        parent = parent&.to_sym
+
+        if parent && !themes.key?(parent)
+          raise ArgumentError,
+                "theme #{name.inspect} names unknown parent #{parent.inspect}. Register the parent first."
+        end
+
+        candidate = Theme.new(name: name, parent: parent)
+        detect_cycle!(name, candidate)
+        themes[name] = candidate
+      end
+
+      # The theme, then its ancestors. A renderer walks this and uses the first
+      # partial that exists.
+      def theme_chain(name)
+        name = name.to_sym
+        raise ArgumentError, "unregistered theme #{name.inspect}" unless themes.key?(name)
+
+        chain = []
+        current = themes[name]
+        while current
+          chain << current.name
+          current = current.parent && themes[current.parent]
+        end
+        chain
+      end
+
+      private
+
+      # Walks the prospective chain before storing it, so a loop is refused at
+      # registration rather than hanging the first render.
+      def detect_cycle!(name, candidate)
+        seen = [ name ]
+        parent = candidate.parent
+
+        while parent
+          raise ArgumentError, "theme #{name.inspect} would create a parent cycle: #{(seen + [ parent ]).inspect}" if seen.include?(parent)
+
+          seen << parent
+          parent = themes[parent]&.parent
+        end
+      end
     end
 
     # Options every field accepts, whatever its type. These belong to the spec

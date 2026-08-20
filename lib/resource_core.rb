@@ -4,6 +4,7 @@ require "resource_core/engine"
 require "resource_core/detection"
 require "resource_core/base_resource"
 require "resource_core/field_type"
+require "resource_core/theme"
 require "resource_core/registry"
 
 module ResourceCore
@@ -38,6 +39,14 @@ module ResourceCore
 
     def field_types(renderer: nil)
       Registry.field_types_for(renderer)
+    end
+
+    def register_theme(name, parent: nil)
+      Registry.register_theme(name, parent: parent)
+    end
+
+    def theme_chain(name)
+      Registry.theme_chain(name)
     end
 
     # Human-readable label for a record already selected in a lookup field.
