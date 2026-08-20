@@ -168,7 +168,8 @@ type.wrapper?   # => true
 the type's own name (so most registrations omit it); `wrapper:` defaults to
 `true`. Re-registering the same name replaces it — that is how an app
 overrides an engine-supplied type. `ResourceCore.field_types(renderer:)`
-lists every type for one renderer, or all of them if `renderer:` is omitted.
+returns a Hash of every type registered for one renderer (name => `FieldType`),
+or all of them if `renderer:` is omitted.
 
 ## `register_namespace`
 
@@ -249,6 +250,21 @@ ResourceCore.register_error_rule do |name, _spec|
 end
 
 ResourceCore.consumed_error_names(:author_id, {})  # => [:author_id, :author]
+```
+
+A rule may also return an `Array` of names — `consumed_error_names` wraps
+whatever a rule returns in `Array(...)`, so returning several names at once
+works the same as chaining several rules. A `:publisher` lookup field backed
+by both a `publisher_id` foreign key and a denormalized `publisher_name`
+cache column is a realistic case:
+
+```ruby
+ResourceCore.register_error_rule do |name, _spec|
+  [ :publisher_id, :publisher_name ] if name == :publisher
+end
+
+ResourceCore.consumed_error_names(:publisher, {})
+# => [:publisher, :publisher_id, :publisher_name]
 ```
 
 A field always consumes its own name; rules and the spec's own
