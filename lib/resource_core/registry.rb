@@ -133,6 +133,22 @@ module ResourceCore
         chain
       end
 
+      def register_error_rule(&block)
+        error_rules << block
+      end
+
+      # Which attributes a field reports errors for. Always itself, plus
+      # whatever the registered rules and the spec's own consume_errors add —
+      # so an FK field can surface the association's error, and nothing is
+      # silently unreported.
+      def consumed_error_names(name, spec)
+        name = name.to_sym
+        from_rules = error_rules.flat_map { |rule| Array(rule.call(name, spec || {})) }
+        explicit = Array((spec || {})[:consume_errors])
+
+        ([ name ] + from_rules + explicit).compact.map(&:to_sym).uniq
+      end
+
       private
 
       # Walks the prospective chain before storing it, so a loop is refused at

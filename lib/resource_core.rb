@@ -49,6 +49,14 @@ module ResourceCore
       Registry.theme_chain(name)
     end
 
+    def register_error_rule(&block)
+      Registry.register_error_rule(&block)
+    end
+
+    def consumed_error_names(name, spec)
+      Registry.consumed_error_names(name, spec)
+    end
+
     # Human-readable label for a record already selected in a lookup field.
     # `label_method` (from the field spec) takes precedence over the
     # conventional readers in `config.lookup_label_methods`; `to_s` is the last
