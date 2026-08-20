@@ -1,7 +1,6 @@
 module ResourceCore
   class Configuration
     attr_accessor :theme, :resource_class_suffix, :lookup_label_methods
-    attr_writer :base_class
 
     def initialize
       @theme = :daisyui
