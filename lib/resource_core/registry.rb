@@ -141,10 +141,23 @@ module ResourceCore
       # whatever the registered rules and the spec's own consume_errors add —
       # so an FK field can surface the association's error, and nothing is
       # silently unreported.
+      #
+      # Rules are app-supplied and run on every field of every render, so each
+      # call is rescued individually: one rule's bad assumption (a missing
+      # association, a spec key it expects but isn't there) must not take
+      # down the other rules or the field's own name along with it. A rule
+      # that raises simply contributes nothing; the error it would have
+      # routed falls through to the form's unreported-errors block instead.
       def consumed_error_names(name, spec)
         name = name.to_sym
-        from_rules = error_rules.flat_map { |rule| Array(rule.call(name, spec || {})) }
-        explicit = Array((spec || {})[:consume_errors])
+        spec ||= {}
+        from_rules = error_rules.flat_map do |rule|
+          Array(rule.call(name, spec))
+        rescue StandardError => e
+          Rails.logger&.warn("ResourceCore error rule raised for #{name.inspect}: #{e.class}: #{e.message}")
+          []
+        end
+        explicit = Array(spec[:consume_errors])
 
         ([ name ] + from_rules + explicit).compact.map(&:to_sym).uniq
       end

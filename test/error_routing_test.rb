@@ -43,4 +43,19 @@ class ErrorRoutingTest < ActiveSupport::TestCase
 
     assert_equal [ :title ], ResourceCore.consumed_error_names(:title, {})
   end
+
+  test "two rules that both match the same field compose additively" do
+    ResourceCore.register_error_rule { |name, _spec| :publisher if name == :publisher_id }
+    ResourceCore.register_error_rule { |name, _spec| :publisher_name if name == :publisher_id }
+
+    assert_equal %i[publisher_id publisher publisher_name],
+                 ResourceCore.consumed_error_names(:publisher_id, {})
+  end
+
+  test "a rule that raises contributes nothing but does not block the others" do
+    ResourceCore.register_error_rule { |_name, _spec| raise "no such association" }
+    ResourceCore.register_error_rule { |name, _spec| :reviewer if name == :review }
+
+    assert_equal %i[review reviewer], ResourceCore.consumed_error_names(:review, {})
+  end
 end
