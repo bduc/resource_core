@@ -61,4 +61,14 @@ class RegistryTest < ActiveSupport::TestCase
 
     assert_equal({ rows: 9 }, ResourceCore.field_type(:text).defaults)
   end
+
+  test "mutating the hash returned by field_types cannot corrupt the registry" do
+    ResourceCore.register_renderer :form
+    ResourceCore.register_field_type :text, renderers: [ :form ]
+
+    ResourceCore.field_types[:hacked] = :oops
+
+    assert_nil ResourceCore.field_type(:hacked)
+    assert_equal %i[text], ResourceCore.field_types.keys
+  end
 end

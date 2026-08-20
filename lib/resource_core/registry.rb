@@ -65,7 +65,7 @@ module ResourceCore
       end
 
       def field_types_for(renderer)
-        return field_types if renderer.nil?
+        return field_types.dup if renderer.nil?
 
         field_types.select { |_name, type| type.renders_for?(renderer) }
       end

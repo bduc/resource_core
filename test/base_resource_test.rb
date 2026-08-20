@@ -70,6 +70,21 @@ class BaseResourceTest < ActiveSupport::TestCase
     assert_equal "Review", resolved.model_class_name
   end
 
+  test "a suffix containing regex metacharacters is escaped, not interpreted" do
+    original_suffix = ResourceCore.config.resource_class_suffix
+    ResourceCore.config.resource_class_suffix = "Res(ource)"
+
+    klass = Class.new(ResourceCore::BaseResource)
+    klass.instance_variable_set(:@name_override, "BookRes(ource)")
+    def klass.name
+      @name_override
+    end
+
+    assert_equal "Book", klass.model_class_name
+  ensure
+    ResourceCore.config.resource_class_suffix = original_suffix
+  end
+
   private
 
   # Defines a constant for the duration of the block. resolve caches anonymous

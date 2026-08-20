@@ -10,7 +10,7 @@ module ResourceCore
       attr_writer :model_class_name
 
       def model_class_name
-        @model_class_name ||= name&.sub(/#{ResourceCore.config.resource_class_suffix}\z/, "")
+        @model_class_name ||= name&.sub(/#{Regexp.escape(ResourceCore.config.resource_class_suffix)}\z/, "")
       end
 
       def model_class

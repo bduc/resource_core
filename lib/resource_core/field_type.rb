@@ -7,9 +7,9 @@ module ResourceCore
 
     def initialize(name:, renderers:, options: [], defaults: {}, partial: nil, wrapper: true)
       @name = name.to_sym
-      @renderers = Array(renderers).map(&:to_sym)
-      @options = Array(options).map(&:to_sym)
-      @defaults = defaults.to_h.symbolize_keys
+      @renderers = Array(renderers).map(&:to_sym).freeze
+      @options = Array(options).map(&:to_sym).freeze
+      @defaults = defaults.to_h.symbolize_keys.freeze
       # Defaults to the type's own name: the common case is one partial per
       # type, named after it.
       @partial = (partial || @name).to_s
