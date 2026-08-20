@@ -28,6 +28,10 @@ module ResourceCore
       Registry.field_type(name)
     end
 
+    def register_namespace(name, options)
+      Registry.register_namespace(name, options)
+    end
+
     def field_types(renderer: nil)
       Registry.field_types_for(renderer)
     end

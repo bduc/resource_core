@@ -69,6 +69,30 @@ module ResourceCore
 
         field_types.select { |_name, type| type.renders_for?(renderer) }
       end
+
+      def register_namespace(name, options)
+        namespaces[name.to_sym] = Array(options).map(&:to_sym)
+      end
+
+      def namespace(name)
+        namespaces[name.to_sym]
+      end
+
+      # Every option key a field of this type may carry: the spec's own, every
+      # registered renderer's shared set, the type's own, and the names of the
+      # registered namespaces.
+      #
+      # A nil type_name (a field declared before any type is registered)
+      # yields the core options alone — which must still include :as, or
+      # declaring a field at all becomes impossible.
+      def valid_options_for(field_type_name)
+        type = field_type_name && field_type(field_type_name)
+
+        (CORE_OPTIONS +
+          renderers.values.flatten +
+          (type ? type.options : []) +
+          namespaces.keys).uniq
+      end
     end
 
     # Options every field accepts, whatever its type. These belong to the spec

@@ -29,8 +29,10 @@ module ResourceCore
         if options.nil?
           @fields.delete(name)
         else
+          options = options.deep_symbolize_keys
+          validate_options!(name, options)
           @fields[name] ||= {}
-          @fields[name].merge!(options.deep_symbolize_keys)
+          @fields[name].merge!(options)
         end
       end
 
@@ -45,7 +47,9 @@ module ResourceCore
         if options.nil?
           @fields.delete(name)
         else
-          @fields[name].merge!(options.deep_symbolize_keys)
+          options = options.deep_symbolize_keys
+          validate_options!(name, options, current: @fields[name])
+          @fields[name].merge!(options)
         end
       end
 
@@ -69,6 +73,37 @@ module ResourceCore
         return unless model_class
 
         Detection.fields_for(model_class).each { |name, spec| @fields[name] = spec }
+      end
+
+      # Raises on an unknown option rather than ignoring it. A silently dropped
+      # option looks like the engine ignoring your intent, and is usually a typo.
+      def validate_options!(field_name, options, current: nil)
+        type_name = options[:as] || current&.dig(:as) || @fields.dig(field_name, :as)
+        allowed = Registry.valid_options_for(type_name)
+
+        unknown = options.keys - allowed
+        if unknown.any?
+          raise ArgumentError,
+                "#{self.name || 'resource'}: unknown option(s) #{unknown.inspect} on field " \
+                "#{field_name.inspect} (type #{type_name.inspect}). Allowed: #{allowed.sort.inspect}"
+        end
+
+        Registry.namespaces.each_key do |namespace|
+          value = options[namespace]
+          next if value.nil? || value == false
+
+          unless value.is_a?(Hash)
+            raise ArgumentError,
+                  "#{field_name.inspect}: #{namespace.inspect} must be a Hash or false, got #{value.class}"
+          end
+
+          bad = value.keys.map(&:to_sym) - Registry.namespace(namespace)
+          next if bad.empty?
+
+          raise ArgumentError,
+                "#{field_name.inspect}: unknown #{namespace.inspect} key(s) #{bad.inspect}. " \
+                "Allowed: #{Registry.namespace(namespace).sort.inspect}"
+        end
       end
     end
   end
