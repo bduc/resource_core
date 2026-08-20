@@ -85,6 +85,11 @@ module ResourceCore
       # A nil type_name (a field declared before any type is registered)
       # yields the core options alone — which must still include :as, or
       # declaring a field at all becomes impossible.
+      #
+      # A type_name that names no registered type (a typo'd `as:`, or one
+      # whose registration hasn't run yet) hits the same fallback: `type`
+      # ends up nil either way, so the permissive core-options set applies
+      # and the bad type name itself is never flagged here.
       def valid_options_for(field_type_name)
         type = field_type_name && field_type(field_type_name)
 

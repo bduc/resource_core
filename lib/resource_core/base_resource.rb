@@ -94,15 +94,16 @@ module ResourceCore
 
           unless value.is_a?(Hash)
             raise ArgumentError,
-                  "#{field_name.inspect}: #{namespace.inspect} must be a Hash or false, got #{value.class}"
+                  "#{self.name || 'resource'}: #{field_name.inspect}: #{namespace.inspect} must be a Hash or " \
+                  "false, got #{value.class}"
           end
 
-          bad = value.keys.map(&:to_sym) - Registry.namespace(namespace)
+          bad = value.keys - Registry.namespace(namespace)
           next if bad.empty?
 
           raise ArgumentError,
-                "#{field_name.inspect}: unknown #{namespace.inspect} key(s) #{bad.inspect}. " \
-                "Allowed: #{Registry.namespace(namespace).sort.inspect}"
+                "#{self.name || 'resource'}: #{field_name.inspect}: unknown #{namespace.inspect} key(s) " \
+                "#{bad.inspect}. Allowed: #{Registry.namespace(namespace).sort.inspect}"
         end
       end
     end

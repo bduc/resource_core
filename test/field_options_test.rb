@@ -70,6 +70,47 @@ class FieldOptionsTest < ActiveSupport::TestCase
     assert_match "kanban", error.message
   end
 
+  test "field! rejects an option belonging to a different type than the one already stored" do
+    ResourceCore.register_field_type :money, renderers: [ :form ], options: %i[currency]
+
+    klass = resource_for(Book) { field :synopsis, as: :rich_text, toolbar: %i[bold] }
+
+    error = assert_raises(ArgumentError) do
+      klass.field! :synopsis, currency: "EUR"
+    end
+    assert_match "currency", error.message
+
+    # Still resolves to :rich_text, not to "no type at all": its own option
+    # keeps working right after the rejection above.
+    klass.field! :synopsis, toolbar: %i[italic]
+    assert_equal %i[italic], klass.fields[:synopsis][:toolbar]
+  end
+
+  test "field! validates a repeated option against the stored type when as: is not repeated" do
+    klass = resource_for(Book) { field :synopsis, as: :rich_text, toolbar: %i[bold] }
+
+    klass.field! :synopsis, toolbar: %i[italic]
+
+    assert_equal %i[italic], klass.fields[:synopsis][:toolbar]
+  end
+
+  test "field! changing the type via as: validates against the new type, not the old one" do
+    ResourceCore.register_field_type :money, renderers: [ :form ], options: %i[currency]
+
+    klass = resource_for(Book) { field :price, as: :money, currency: "EUR" }
+
+    klass.field! :price, as: :rich_text, toolbar: %i[bold]
+    assert_equal :rich_text, klass.fields[:price][:as]
+    assert_equal %i[bold], klass.fields[:price][:toolbar]
+
+    # Switching back: toolbar belonged to the type just left behind, and must
+    # not be grandfathered in against the newly-named type.
+    error = assert_raises(ArgumentError) do
+      klass.field! :price, as: :money, toolbar: %i[bold]
+    end
+    assert_match "toolbar", error.message
+  end
+
   private
 
   def resource_for(model, &block)
