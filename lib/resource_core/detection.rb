@@ -1,7 +1,7 @@
 module ResourceCore
-  # Turns an Active Record class into a starting set of field specs. Task 5
-  # makes the rules extensible; this is the behaviour ported verbatim from
-  # resource_form so the move can be verified before anything changes.
+  # Turns an Active Record class into a starting set of field specs. Detection
+  # is a prependable chain: registered detectors run newest-first, and the
+  # column-type mapping is the floor an app or engine can never fail to hit.
   module Detection
     SKIPPED_COLUMNS = %w[id lock_version created_at updated_at].freeze
 
@@ -12,7 +12,8 @@ module ResourceCore
         ar_model.columns.each do |column|
           next if SKIPPED_COLUMNS.include?(column.name)
 
-          specs[column.name.to_sym] = { as: column_field_type(column) }
+          name = column.name.to_sym
+          specs[name] = { as: field_type_for(name, column) }
         end
 
         ar_model.reflect_on_all_associations.each do |assoc|
@@ -31,6 +32,17 @@ module ResourceCore
         end
 
         specs
+      end
+
+      # Registered detectors first, newest to oldest; the column-type mapping is
+      # the floor, so there is always an answer.
+      def field_type_for(name, column)
+        Registry.detectors.each do |detector|
+          result = detector.call(name, column)
+          return result.to_sym if result
+        end
+
+        column ? column_field_type(column) : :text
       end
 
       def column_field_type(column)

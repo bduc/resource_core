@@ -32,6 +32,10 @@ module ResourceCore
       Registry.register_namespace(name, options)
     end
 
+    def detect(&block)
+      Registry.register_detector(&block)
+    end
+
     def field_types(renderer: nil)
       Registry.field_types_for(renderer)
     end

@@ -74,6 +74,11 @@ module ResourceCore
         namespaces[name.to_sym] = Array(options).map(&:to_sym)
       end
 
+      # Newest first: an app registers after the engines, and should win.
+      def register_detector(&block)
+        detectors.unshift(block)
+      end
+
       def namespace(name)
         namespaces[name.to_sym]
       end
