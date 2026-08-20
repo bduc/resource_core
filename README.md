@@ -44,6 +44,10 @@ none of this moving under them:
 - `ResourceCore.register_format` / `ResourceCore::Value.raw` /
   `ResourceCore::Value.display`
 - `ResourceCore.lookup_label`
+- `ResourceCore::Detection.field_type_for` — the one piece of `Detection` a
+  renderer is expected to call directly, for a name that has no field spec at
+  all (a virtual attribute, not a real column) rather than the detected
+  default a spec would already carry
 
 Everything else — `ResourceCore::Registry`'s internals, `FieldType`,
 `Theme`, the shape of `ResourceCore::Detection`'s column-type mapping — is

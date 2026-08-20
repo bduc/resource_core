@@ -83,9 +83,14 @@ module ResourceCore
         namespaces[name.to_sym]
       end
 
-      # Every option key a field of this type may carry: the spec's own, every
-      # registered renderer's shared set, the type's own, and the names of the
-      # registered namespaces.
+      # Every option key a field of this type may carry: the spec's own, the
+      # shared set of only the renderer(s) *this type* belongs to, the type's
+      # own, and the names of the registered namespaces.
+      #
+      # Scoped to the type's own renderers rather than every registered
+      # renderer's options — a table renderer's `%i[sortable width align]`
+      # must not become legal on a form-only type like :password just because
+      # both renderers happen to be registered in the same process.
       #
       # A nil type_name (a field declared before any type is registered)
       # yields the core options alone — which must still include :as, or
@@ -99,7 +104,7 @@ module ResourceCore
         type = field_type_name && field_type(field_type_name)
 
         (CORE_OPTIONS +
-          renderers.values.flatten +
+          renderers.values_at(*(type ? type.renderers : [])).compact.flatten +
           (type ? type.options : []) +
           namespaces.keys).uniq
       end
@@ -189,6 +194,12 @@ module ResourceCore
     # Defined on the module, not inside `class << self` — a constant declared
     # in the singleton class lands on the singleton and `Registry::CORE_OPTIONS`
     # would not resolve from outside.
+    #
+    # `unit` is legal on every field but read by no partial in resource_form,
+    # the only renderer built on this gem so far — carried over from the
+    # pre-resource_core whitelist, kept as reserved spec-level vocabulary for
+    # a renderer that wants "€" or "kg" attached to a value display without
+    # inventing its own option name for it.
     CORE_OPTIONS = %i[
       as label hint partial format unit consume_errors class_name polymorphic
     ].freeze

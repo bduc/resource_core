@@ -32,6 +32,18 @@ class FieldOptionsTest < ActiveSupport::TestCase
     assert_match "text", error.message
   end
 
+  test "a renderer's shared options do not leak onto a type that isn't registered for that renderer" do
+    # A table renderer's options must not become legal on a form-only type
+    # just because both renderers happen to be registered in the same
+    # process — each type's allowed set is scoped to its own renderers.
+    ResourceCore.register_renderer :table, options: %i[sortable width align]
+
+    error = assert_raises(ArgumentError) do
+      resource_for(Book) { field :title, as: :text, sortable: true }
+    end
+    assert_match "sortable", error.message
+  end
+
   test "an unknown option raises and names what was allowed" do
     error = assert_raises(ArgumentError) do
       resource_for(Book) { field :title, as: :text, plaseholder: "typo" }
