@@ -6,6 +6,7 @@ require "resource_core/base_resource"
 require "resource_core/field_type"
 require "resource_core/theme"
 require "resource_core/registry"
+require "resource_core/value"
 
 module ResourceCore
   class << self
@@ -51,6 +52,10 @@ module ResourceCore
 
     def register_error_rule(&block)
       Registry.register_error_rule(&block)
+    end
+
+    def register_format(name, &block)
+      Registry.register_format(name, &block)
     end
 
     def consumed_error_names(name, spec)

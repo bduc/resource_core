@@ -162,6 +162,10 @@ module ResourceCore
         ([ name ] + from_rules + explicit).compact.map(&:to_sym).uniq
       end
 
+      def register_format(name, &block)
+        formats[name.to_sym] = block
+      end
+
       private
 
       # Walks the prospective chain before storing it, so a loop is refused at
