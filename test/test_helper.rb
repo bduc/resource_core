@@ -5,6 +5,7 @@ ActiveRecord::Migrator.migrations_paths = [ File.expand_path("dummy/db/migrate",
 require "rails/test_help"
 
 class ActiveSupport::TestCase
-  # Each test that registers into the registry must not leak into the next.
-  # See ResourceCore::Registry.reset! (Task 3).
+  # Registration is global. Without this, a type registered by one test is
+  # still there for the next, and tests pass in isolation but not together.
+  teardown { ResourceCore::Registry.reset! }
 end

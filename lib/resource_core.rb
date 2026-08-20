@@ -3,6 +3,8 @@ require "resource_core/configuration"
 require "resource_core/engine"
 require "resource_core/detection"
 require "resource_core/base_resource"
+require "resource_core/field_type"
+require "resource_core/registry"
 
 module ResourceCore
   class << self
@@ -12,6 +14,22 @@ module ResourceCore
 
     def configure
       yield config
+    end
+
+    def register_renderer(name, options: [])
+      Registry.register_renderer(name, options: options)
+    end
+
+    def register_field_type(name, renderers:, **rest)
+      Registry.register_field_type(name, renderers: renderers, **rest)
+    end
+
+    def field_type(name)
+      Registry.field_type(name)
+    end
+
+    def field_types(renderer: nil)
+      Registry.field_types_for(renderer)
     end
 
     # Human-readable label for a record already selected in a lookup field.
