@@ -1,4 +1,5 @@
 require "test_helper"
+require "timeout"
 
 class ThemeTest < ActiveSupport::TestCase
   setup { ResourceCore::Registry.reset! }
@@ -43,5 +44,34 @@ class ThemeTest < ActiveSupport::TestCase
     error = assert_raises(ArgumentError) { ResourceCore.register_theme :a, parent: :b }
 
     assert_match(/cycle/i, error.message)
+  end
+
+  test "a cycle three nodes deep raises rather than looping forever" do
+    ResourceCore.register_theme :a
+    ResourceCore.register_theme :b, parent: :a
+    ResourceCore.register_theme :c, parent: :b
+
+    # A guard that only compares against the immediate parent would miss this
+    # and loop forever, so bound the wait: a regression must fail fast rather
+    # than wedge the suite.
+    error = Timeout.timeout(2) do
+      # Re-registering :a with :c as its parent closes a 3-hop loop.
+      assert_raises(ArgumentError) { ResourceCore.register_theme :a, parent: :c }
+    end
+
+    assert_match(/cycle/i, error.message)
+  end
+
+  test "a chain deepens when an ancestor is re-registered with a new parent" do
+    ResourceCore.register_theme :base
+    ResourceCore.register_theme :mid, parent: :base
+    ResourceCore.register_theme :leaf, parent: :mid
+
+    assert_equal [ :leaf, :mid, :base ], ResourceCore.theme_chain(:leaf)
+
+    ResourceCore.register_theme :root
+    ResourceCore.register_theme :base, parent: :root
+
+    assert_equal [ :leaf, :mid, :base, :root ], ResourceCore.theme_chain(:leaf)
   end
 end
