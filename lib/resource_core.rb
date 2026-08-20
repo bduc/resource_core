@@ -1,6 +1,8 @@
 require "resource_core/version"
 require "resource_core/configuration"
 require "resource_core/engine"
+require "resource_core/detection"
+require "resource_core/base_resource"
 
 module ResourceCore
   class << self
@@ -25,6 +27,19 @@ module ResourceCore
       end
 
       match ? record.public_send(match).to_s : record.to_s
+    end
+
+    # The resource class describing `model_class`: the conventionally named one
+    # if it exists, else an anonymous subclass of the app's base class so
+    # detected fields still carry the app's conventions.
+    def resolve(model_class)
+      suffix = config.resource_class_suffix
+      if suffix
+        named = "#{model_class.name}#{suffix}".safe_constantize
+        return named if named && named < ResourceCore::BaseResource
+      end
+
+      ResourceCore::BaseResource.anonymous_for(model_class)
     end
   end
 end
