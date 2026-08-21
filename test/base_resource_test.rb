@@ -46,6 +46,39 @@ class BaseResourceTest < ActiveSupport::TestCase
     assert_not klass.fields.key?(:isbn)
   end
 
+  test "re-declaring a detected column moves it to the end of fields" do
+    klass = Class.new(ResourceCore::BaseResource) do
+      self.model_class_name = "Book"
+    end
+    first_detected = klass.fields.keys.first
+
+    klass.field first_detected, label: "Nieuw"
+
+    assert_equal first_detected, klass.fields.keys.last
+    refute_equal first_detected, klass.fields.keys.first
+  end
+
+  test "re-declaring a field preserves options set by an earlier call" do
+    klass = Class.new(ResourceCore::BaseResource) do
+      self.model_class_name = "Book"
+      field :author, polymorphic: false
+      field :author, label: "Auteur"
+    end
+
+    assert_equal :lookup_one, klass.fields[:author][:as]
+    assert_equal false, klass.fields[:author][:polymorphic]
+    assert_equal "Auteur", klass.fields[:author][:label]
+  end
+
+  test "a first-time field on a name that is not a column still appends" do
+    klass = Class.new(ResourceCore::BaseResource) do
+      self.model_class_name = "Book"
+      field :internal_note, as: :text
+    end
+
+    assert_equal :internal_note, klass.fields.keys.last
+  end
+
   test "field! only touches an existing field" do
     klass = Class.new(ResourceCore::BaseResource) do
       self.model_class_name = "Book"
@@ -55,6 +88,17 @@ class BaseResourceTest < ActiveSupport::TestCase
 
     assert_equal "Titel", klass.fields[:title][:label]
     assert_not klass.fields.key?(:nonexistent)
+  end
+
+  test "field! re-declaring an existing field also moves it to the end" do
+    klass = Class.new(ResourceCore::BaseResource) do
+      self.model_class_name = "Book"
+    end
+    first_detected = klass.fields.keys.first
+
+    klass.field! first_detected, label: "Nieuw"
+
+    assert_equal first_detected, klass.fields.keys.last
   end
 
   test "resolve returns the named resource class when one exists" do

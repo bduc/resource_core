@@ -31,8 +31,15 @@ module ResourceCore
         else
           options = options.deep_symbolize_keys
           validate_options!(name, options)
-          @fields[name] ||= {}
-          @fields[name].merge!(options)
+          # Delete-then-reinsert rather than merge!-in-place: a Hash merge does
+          # not move an existing key, so a plain re-declaration of a
+          # schema-detected field would style it without ever reordering it —
+          # contradicting the documented default column order ("every field
+          # not excluded, in declaration order"). Deleting first and
+          # reassigning moves the key to the end while `spec.merge(options)`
+          # still keeps every option a prior call set.
+          spec = @fields.delete(name) || {}
+          @fields[name] = spec.merge(options)
         end
       end
 
@@ -49,7 +56,10 @@ module ResourceCore
         else
           options = options.deep_symbolize_keys
           validate_options!(name, options, current: @fields[name])
-          @fields[name].merge!(options)
+          # Same reinsertion as field above, minus the early-return case: the
+          # `key?` guard already ensures a spec exists here.
+          spec = @fields.delete(name)
+          @fields[name] = spec.merge(options)
         end
       end
 
